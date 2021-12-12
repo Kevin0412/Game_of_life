@@ -1,0 +1,84 @@
+import cv2
+import numpy as np
+import time
+import random
+from mcpi.minecraft import Minecraft
+mc=Minecraft.create()
+img=np.zeros((512,512), np.uint8)
+data=[]
+for x in range(64):
+    d=[]
+    for y in range(64):
+        D=[]
+        for z in range(64):
+            if y==31 and x!=0 and x!=63  and z!=0 and z!=63 or y==32 and x!=0 and x!=63  and z!=0 and z!=63:
+                D.append(1)
+            else:
+                D.append(0)
+        d.append(D)
+    data.append(d)
+#0 remain died
+#1 remain alive
+#2 born
+#3 die
+def develop(x,y,z):
+    cell=0
+    for a in range(3):
+        for b in range(3):
+            for c in range(3):
+                d=x+a-1
+                e=y+b-1
+                f=z+c-1
+                if d==64:
+                    d=0
+                if d==-1:
+                    d=63
+                if e==64:
+                    e=0
+                if e==-1:
+                    e=63
+                if f==64:
+                    f=0
+                if f==-1:
+                    f=63
+                if int(data[d][e][f])==1 or int(data[d][e][f])==3:
+                    cell+=1
+    if 8<cell<12 and int(data[x][y][z])==0:
+        data[x][y][z]=2
+        img[x+z%8*64,y+int(z/8)*64]=255
+        mc.setBlock(x-32,y,z-32,1)
+    if cell!=12 and cell!=9 and cell!=10 and cell!=11 and cell!=8 and cell!=7 and int(data[x][y][z])==1:
+        data[x][y][z]=3
+        img[x+z%8*64,y+int(z/8)*64]=0
+        mc.setBlock(x-32,y,z-32,0)
+def grow():
+    for x in range(64):
+        for y in range(64):
+            for z in range(64):
+                develop(x,y,z)
+    for x in range(64):
+        for y in range(64):
+            for z in range(64):
+                if data[x][y][z]==2:
+                    data[x][y][z]=1
+                if data[x][y][z]==3:
+                    data[x][y][z]=0
+for x in range(64):
+    for y in range(64):
+        for z in range(64):
+            if int(data[x][y][z])==1:
+                img[x+z%8*64,y+int(z/8)*64]=255
+                mc.setBlock(x-32,y,z-32,1)
+            if int(data[x][y][z])==0:
+                img[x+z%8*64,y+int(z/8)*64]=0
+                mc.setBlock(x-32,y,z-32,0)
+g=0
+while(True):
+    cv2.imshow('image',img)
+    grow()
+    g+=1
+    print(g)
+    if cv2.waitKey(1)&0xFF==27:
+        cv2.imwrite('Game.jpg',img)
+        break
+cv2.destroyAllWindows()
